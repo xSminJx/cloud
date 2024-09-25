@@ -1,0 +1,15 @@
+|xor_test
+i_0[0] => o_XOR.IN0
+i_0[1] => o_XOR.IN0
+i_0[2] => o_XOR.IN0
+i_0[3] => o_XOR.IN0
+i_1[0] => o_XOR.IN1
+i_1[1] => o_XOR.IN1
+i_1[2] => o_XOR.IN1
+i_1[3] => o_XOR.IN1
+o_XOR[0] <= o_XOR.DB_MAX_OUTPUT_PORT_TYPE
+o_XOR[1] <= o_XOR.DB_MAX_OUTPUT_PORT_TYPE
+o_XOR[2] <= o_XOR.DB_MAX_OUTPUT_PORT_TYPE
+o_XOR[3] <= o_XOR.DB_MAX_OUTPUT_PORT_TYPE
+
+
