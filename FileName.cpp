@@ -14,6 +14,7 @@ struct Artist {
 	list<Song*> songs;
 	Artist() {}
 	Artist(string name) : name(name) {}
+
 };
 struct Song {
 	int index;
@@ -24,6 +25,10 @@ struct Song {
 		title(ti), artist(art), album(alb), mv_url(mv) {
 		index = id_counter++;
 	}
+	void sprint() {
+		cout << index << ":" << title << ", " << album <<
+			", " << mv_url << endl;
+	}
 };
 
 list<Artist*> artist_directory[256];
@@ -31,7 +36,7 @@ const int SONG_DIRECTORY_SIZE = 10;
 list<Song*> song_directory[SONG_DIRECTORY_SIZE];
 const string datafilename = "songs.csv";
 
-// ¾ÆÆ¼½ºÆ® µğ·ºÅä¸®¿¡¼­ Ã£ÀºµÚ¿¡ ¾øÀ¸¸é 0, ÀÖÀ¸¸é ¾ÆÆ¼½ºÆ® ¹İÈ¯
+// ì•„í‹°ìŠ¤íŠ¸ ë””ë ‰í† ë¦¬ì—ì„œ ì°¾ì€ë’¤ì— ì—†ìœ¼ë©´ 0, ìˆìœ¼ë©´ ì•„í‹°ìŠ¤íŠ¸ ë°˜í™˜
 Artist* find_artist(string name) {
 	list<Artist*> artist_list = artist_directory[(unsigned char)name[0]];
 	for (auto it = artist_list.begin(); it != artist_list.end(); it++) {
@@ -40,13 +45,33 @@ Artist* find_artist(string name) {
 	}
 	return nullptr;
 }
+Artist* find_artist2(string name) { // ë¶€ë¶„ ë¬¸ìì—´ í¬í•¨í•˜ëŠ”ì§€
+	list<Artist*> artist_list = artist_directory[(unsigned char)name[0]];
+	for (auto it = artist_list.begin(); it != artist_list.end(); it++) {
+		if ((*it)->name.substr(0, name.size()) == name)
+			return *it;
+	}
+	return nullptr;
+}
+void find_song_bykeyword(string str) { // song_directoryì— ê°€ì„œ ì „ìˆ˜ì¡°ì‚¬
+	for (int i = 0; i < SONG_DIRECTORY_SIZE; i++) {
+		auto cur = song_directory[i].begin();
+		while (cur != song_directory[i].end()) {
+			if ((*cur)->title.find(str) != string::npos) {
+				cout << " ";
+				(*cur)->sprint();
+			}
+			cur++;
+		}
+	}
+}
 
-// Ãâ·Âµé
+// ì¶œë ¥ë“¤
 void print_artist(Artist* p) {
 	cout << p->name << ":" << endl;
 	for (auto s : p->songs) {
-		cout << " " << s->index << ":" << s->title << ", " << s->album <<
-			", " << s->mv_url << endl;
+		cout << " ";
+		s->sprint();
 	}
 }
 void print_artist_directory() {
@@ -58,14 +83,14 @@ void print_artist_directory() {
 	}
 }
 
-// µğ·ºÅä¸®¿¡ ¾ÆÆ¼½ºÆ® »ğÀÔ
+// ë””ë ‰í† ë¦¬ì— ì•„í‹°ìŠ¤íŠ¸ ì‚½ì…
 Artist* add_artist(string name) {
 	Artist* ptr_artist = new Artist(name);
 	list<Artist*>& artist_list = artist_directory[(unsigned char)name[0]];
 	artist_list.push_back(ptr_artist);
 	return ptr_artist;
 }
-// ³ë·¡ »ğÀÔ
+// ë…¸ë˜ ì‚½ì…
 void add_song(string title, string artist, string album = ""
 	, string mv_url = "") {
 	Artist* artist_ptr = find_artist(artist);
@@ -86,7 +111,7 @@ void add() {
 	add_song(out[0], out[1], out[2], out[3]);
 }
 
-// load_songs¿¡ ¾²´Â ÇÔ¼öµé
+// load_songsì— ì“°ëŠ” í•¨ìˆ˜ë“¤
 string cutting(string str) {
 	while (str.front() == ' ') str.erase(str.begin());
 	while (str.back() == ' ') str.erase(str.end() - 1);
@@ -125,6 +150,23 @@ void print_song_directory() {
 	}
 }
 
+void remove_by_idx(int idx) {
+	int i = idx % 10;
+	for (auto it = song_directory[i].begin(); it != song_directory[i].end(); it++) {
+		if ((*it)->index == idx) {
+			auto artsong = (*it)->artist->songs;
+			for (auto it2 = artsong.begin(); it2 != artsong.end(); it2++) {
+				if ((*it2)->index == idx) {
+					artsong.erase(it2); // ì´ê±° ì™œ ì•ˆì§€ì›Œì§??
+					break;
+				}
+			}
+			song_directory[i].erase(it);
+			return;
+		}
+	}
+}
+
 void cmd() {
 	while (1) {
 		vector<string> com;
@@ -132,7 +174,7 @@ void cmd() {
 		cout << "$ ";
 		getline(cin, buf);
 		com = split_line(buf, ' ');
-		com.push_back(""); // ÀÔ·Â¹Ş´Â ºÎºĞ °íÄ¡¼À
+		com.push_back(""); // ì…ë ¥ë°›ëŠ” ë¶€ë¶„ ê³ ì¹˜ì…ˆ
 
 		if (com[0] == "list") {
 			if (com[1] == "") print_song_directory();
@@ -140,23 +182,21 @@ void cmd() {
 		}
 		else if (com[0] == "add") add();
 		else if (com[0] == "find") {
-			if (com[1] == "") {
-				cin >> buf;
+			if (com[1] != "-a") {
 				cout << "Found:\n";
-
+				find_song_bykeyword(com[1]);
 			}
 			else {
-				cin >> buf;
-				if (find_artist(com[0])) {
+				if (find_artist2(com[2])) {
 					cout << "Found:\n";
-					print_artist(find_artist(com[0]));
+					print_artist(find_artist2(com[2]));
 				}
-				else cout << "not exist artist.";
+				else cout << "not exist artist.\n";
 			}
 		}
 		else if (com[0] == "remove") {
-			if (com[1] == "") {
-
+			if (com[1] != "-a") {
+				remove_by_idx(stoi(com[1]));
 			}
 			else {
 
