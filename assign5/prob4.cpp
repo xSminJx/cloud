@@ -29,7 +29,7 @@ int dfs(matrix& v, int a, int b, int n) {
 
 		for (int i = 0; i < 8; i++) {
 			int dxx = x + dx[i], dyy = y + dy[i];
-			if (inrange(dxx, dyy, n) && v[dxx][dyy].visit == 0) {
+			if (inrange(dxx, dyy, n) && v[dxx][dyy].val == 1 && v[dxx][dyy].visit == 0) {
 				v[dxx][dyy].visit = 1;
 				stc.push({ dxx,dyy });
 				res++;
@@ -52,7 +52,7 @@ int main() {
 
 		for (int i = 0; i < n; i++) {
 			for (int j = 0; j < n; j++) {
-				if (v[i][j].visit == 0) {
+				if (v[i][j].val == 1 && v[i][j].visit == 0) {
 					cout << dfs(v, i, j, n) << " ";
 				}
 			}
