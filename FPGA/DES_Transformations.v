@@ -382,16 +382,18 @@ wire [47:0] E_o, PC2_o;
 wire [31:0] SBOX_o, p_o;
 wire i_fRight, i_f1bit;
 
-parameter IDLE = 2'00,
-		  ENC  = 2'01,
-		  DEC  = 2'10,
-		  DONE = 2'11;
+parameter IDLE = 2'b00,
+		  ENC  = 2'b01,
+		  DEC  = 2'b10,
+		  DONE = 2'b11;
 
 assign i_fRight = c_State[1];
 assign i_f1bit	= c_Rnd == 0 ||
 				  c_Rnd == 7 || 
 				  c_Rnd == 14|| 
 				  c_Rnd == 15;
+assign o_fDone = c_Rnd==16;
+assign o_Text = InvIP_o;
 
 IP		IP0		(i_Text, IP_o);
 InvIP	InvIP0	({c_L,c_R}, InvIP_o);
@@ -405,7 +407,7 @@ E_Table E0 		(c_R, E_o);
 SBOX	S0 		(E_o ^ PC2_o, SBOX_o);
 P_Table P0		(SBOX_o, P_o);
 
-assign@(posedge i_Clk, negedge i_Rst) begin
+assign @(posedge i_Clk, negedge i_Rst) begin
 	if(!i_Rst) begin
 		c_State	= 0;
 		c_Rnd	= 0;
@@ -423,7 +425,13 @@ assign@(posedge i_Clk, negedge i_Rst) begin
 	end
 end
 
-assign@* begin
+assign @* begin
+	n_State = c_State;
+    n_Rnd = c_Rnd;
+    n_L = c_L;
+    n_R = c_R;
+    n_C = c_C;
+    n_D = c_D;
 	case(c_State)
 		IDLE	:	begin
 			if(i_fStart) begin
@@ -443,9 +451,19 @@ assign@* begin
 				o_Text=0;
 			end
 		end
-		ENC		:	begin
-			n_Rnd=c_Rnd + 1;
-
+		DONE	:	begin
+			n_L=0;
+			n_R=0;
+			n_C=0;
+			n_D=0;
+		end
+		default	:	begin
+			n_Rnd = c_Rnd + 1;
+			n_L = c_R;
+			n_R = c_L^P_o;
+			n_C = ROL_o[55:28];
+			n_D = ROL_o[27: 0];
+			if(c_Rnd==15) n_State = DONE;
 		end
 	endcase
 end
