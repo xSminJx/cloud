@@ -366,8 +366,8 @@ input i_Clk, i_Rst;
 input i_fStart, i_fDec;
 input [63:0] i_Key, i_Text;
 
-output o_fDone;
-output [63:0] o_Text;
+output reg o_fDone;
+output reg [63:0] o_Text;
 
 reg [1:0]  c_State, n_State;
 reg [3:0]  c_Rnd, n_Rnd;
@@ -392,8 +392,6 @@ assign i_f1bit	= c_Rnd == 0 ||
 				  c_Rnd == 7 || 
 				  c_Rnd == 14|| 
 				  c_Rnd == 15;
-assign o_fDone = c_Rnd==16;
-assign o_Text = InvIP_o;
 
 IP		IP0		(i_Text, IP_o);
 InvIP	InvIP0	({c_L,c_R}, InvIP_o);
@@ -432,6 +430,8 @@ assign @* begin
     n_R = c_R;
     n_C = c_C;
     n_D = c_D;
+	o_fDone=0;
+	o_Text=0;
 	case(c_State)
 		IDLE	:	begin
 			if(i_fStart) begin
@@ -456,6 +456,8 @@ assign @* begin
 			n_R=0;
 			n_C=0;
 			n_D=0;
+			o_fDone=1;
+			o_Text=InvIP_o;
 		end
 		default	:	begin
 			n_Rnd = c_Rnd + 1;
