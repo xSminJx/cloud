@@ -1,19 +1,20 @@
 #include <bits/stdc++.h>
 using namespace std;
 
-string reverse_bit(char a) {
-	if (a == '1') return "0";
-	return "1";
+void printv(vector<bool>& v) {
+	for (auto i : v) cout << i;
+	cout << endl;
 }
 
-void cout_dif(string prev, string str, int k) {
-	if (k == 0) {
-		cout << prev + str << endl;
-	}
+void cout_dif(vector<bool>& v, int n, int k) { // n: 현재 가리키는 v의 인덱스, k: 남은 변경 횟수
+	if (k == 0) printv(v);
 	else {
-		string next_str = str.substr(1, str.size() - 1); // str에서 맨앞 비트 뗀 문자열
-		if (str.size() > k) cout_dif(prev + str[0], next_str, k);
-		cout_dif(prev + reverse_bit(str[0]), next_str, k - 1);
+		if (v.size() - n > k) { // 지금부터 전부 뒤집지 않아도 될 때
+			cout_dif(v, n + 1, k); // n번 요소를 뒤집지 않고 진행
+		}
+		v[n] = !v[n];
+		cout_dif(v, n + 1, k - 1); // n번 요소를 뒤집고 진행
+		v[n] = !v[n];
 	}
 }
 
@@ -21,5 +22,12 @@ int main() {
 	string str;
 	int k;
 	cin >> str >> k;
-	cout_dif("", str, k);
+	stringstream ss(str);
+	vector<bool> v;
+
+	char c;
+	while (ss >> c) v.push_back(c - '0');
+
+	cout_dif(v, 0, k);
+	return 0;
 }
