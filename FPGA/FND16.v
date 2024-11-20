@@ -14,11 +14,11 @@ module FND16(i_sel,o_out);
     4'h7 :o_out=7'b1011000; 
     4'h8 :o_out=7'b0000000;
     4'h9 :o_out=7'b0010000;
-    4'b10:o_out=7'b0001000;
-    4'b11:o_out=7'b0000111;
-    4'b12:o_out=7'b1000110;
-    4'b13:o_out=7'b0100001;
-    4'b14:o_out=7'b0000110;
-    4'b15:o_out=7'b0001110;
+    4'ha :o_out=7'b0001000;
+    4'hb :o_out=7'b0000111;
+    4'hc :o_out=7'b1000110;
+    4'hd :o_out=7'b0100001;
+    4'he :o_out=7'b0000110;
+    4'hf :o_out=7'b0001110;
   endcase
 endmodule
