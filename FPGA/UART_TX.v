@@ -71,7 +71,6 @@ always @* begin
 		TX_STOP : begin
 			n_ClkCnt = fLstClk ? 0 : c_ClkCnt + 1;
 			n_State = fLstClk ? IDLE : c_State;
-			if(fLstClk) n_State = IDLE;
 		end
 	endcase
 end
