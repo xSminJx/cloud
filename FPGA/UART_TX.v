@@ -51,6 +51,7 @@ always @* begin
 	n_ClkCnt = c_ClkCnt;
 	n_BitCnt = 0;
 	n_Data	 = c_Data;
+	n_State  = c_State;
 	case(c_State)
 		IDLE : begin
 			n_ClkCnt = 0;

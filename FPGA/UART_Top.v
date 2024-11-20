@@ -26,12 +26,11 @@ UART_RX R0 (i_Clk, i_Rst, i_Rx, o_fDoneRX, o_Data);
 UART_TX T0 (i_Clk, i_Rst, Tx_i_fTx, TX_DATA, o_fDoneTX, o_fReady, o_Tx);
 
 assign n_nPush = n_fPush;
-assign Tx_i_fTx = n_fPush && !n_nPush;
+assign Tx_i_fTx = c_fPush && !n_nPush;
 assign TX_DATA = 
-((!i_Push[0]) ? 8'o00 : 0) |
-((!i_Push[1]) ? 8'o01 : 0) |
-((!i_Push[2]) ? 8'o02 : 0) |
-((!i_Push[3]) ? 8'o03 : 0);
+    (i_Push == 4'b1110) ? 8'd1 :
+    (i_Push == 4'b1101) ? 8'd2 :
+    (i_Push == 4'b1011) ? 8'd3 : 8'd0;
 
 always @(posedge i_Clk, negedge i_Rst) begin
 	if(!i_Rst) begin
