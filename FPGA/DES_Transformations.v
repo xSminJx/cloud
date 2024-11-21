@@ -349,17 +349,11 @@ end
 
 endmodule
 
-/*--------------------------------------------------------------------------------------------------------------*/
-
-module DES_Transformations(
-	i_Clk,
-	i_Rst,
-	i_fStart,
-	i_fDec,
-	i_Key,
-	i_Text,
-	o_fDone,
-	o_Text
+module DES(
+	i_Clk, i_Rst,
+	i_fStart, i_fDec,
+	i_Key, i_Text,
+	o_fDone, o_Text
 );
 
 input i_Clk, i_Rst;
@@ -369,103 +363,112 @@ input [63:0] i_Key, i_Text;
 output reg o_fDone;
 output reg [63:0] o_Text;
 
-reg [1:0]  c_State, n_State;
-reg [3:0]  c_Rnd, n_Rnd;
 reg [31:0] c_L, n_L,
 		   c_R, n_R;
 reg [27:0] c_C, n_C,
 		   c_D, n_D;
+reg [3:0]  c_Rnd, n_Rnd;
+reg [1:0]  c_State, n_State;
 
 wire [63:0] IP_o, InvIP_o;
-wire [55:0] PC1_o, ROL_o;
+wire [55:0] PC1_o;
 wire [47:0] E_o, PC2_o;
-wire [31:0] SBOX_o, p_o;
-wire i_fRight, i_f1bit;
+wire [31:0] SB_o, PT_o;
+wire [27:0] Rot_C, Rot_D;
+wire fRot1bit;
 
-parameter IDLE = 2'b00,
-		  ENC  = 2'b01,
-		  DEC  = 2'b10,
-		  DONE = 2'b11;
+parameter IDLE = 2'b00;
+parameter ENC  = 2'b01;
+parameter DEC  = 2'b10;
+parameter DONE = 2'b11;
 
-assign i_fRight = c_State[1];
-assign i_f1bit	= c_Rnd == 0 ||
-				  c_Rnd == 7 || 
-				  c_Rnd == 14|| 
+PC1 P1 (i_Key, PC1_o);
+ROL ROL1 (c_C, i_fDec, fRot1bit, Rot_C);
+ROL ROL2 (c_D, i_fDec, fRot1bit, Rot_D);
+PC2 P2 ({c_C,c_D}, PC2_o);
+
+IP IP0 (i_Text, IP_o);
+E_Table ET0 (c_R, E_o);
+SBOX SB0 (E_o^PC2_o, SB_o);
+P_Table PT0 (SB_o, PT_o);
+
+InvIP Inv0 ({c_R,c_L}, InvIP_o);
+
+assign fRot1bit = c_Rnd == 0 ||
+				  c_Rnd == 7 ||
+				  c_Rnd == 14||
 				  c_Rnd == 15;
 
-IP		IP0		(i_Text, IP_o);
-InvIP	InvIP0	({c_L,c_R}, InvIP_o);
 
-PC1		PC10	(i_Key, PC1_o);
-ROL		ROL1	(PC1_o[55:28], i_fRight, i_f1bit, ROL_o[55:28]);
-ROL		ROL2	(PC1_o[27: 0], i_fRight, i_f1bit, ROL_o[27: 0]);
-PC2		PC20	(ROL_o, PC2_o);
-
-E_Table E0 		(c_R, E_o);
-SBOX	S0 		(E_o ^ PC2_o, SBOX_o);
-P_Table P0		(SBOX_o, P_o);
-
-assign @(posedge i_Clk, negedge i_Rst) begin
+always @(posedge i_Clk, negedge i_Rst) begin
 	if(!i_Rst) begin
-		c_State	= 0;
-		c_Rnd	= 0;
-		c_L		= 0;
-		c_R		= 0;
-		c_C		= 0;
-		c_D		= 0;
+		c_L = 0;
+		c_R = 0;
+		c_C = 0;
+		c_D = 0;
+		c_Rnd = 0;
+		c_State = IDLE;
 	end else begin
-		c_State	= n_State;
-		c_Rnd	= n_Rnd;
-		c_L	 	= n_L;
-		c_R	 	= n_R;
-		c_C	 	= n_C;
-		c_D	 	= n_D;		
+		c_L = n_L;
+		c_R = n_R;
+		c_C = n_C;
+		c_D = n_D;
+		c_Rnd = n_Rnd;
+		c_State = n_State;
 	end
 end
 
-assign @* begin
+always @* begin
+	n_Rnd = c_Rnd;
+	n_L = c_L;
+	n_R = c_R;
+	n_C = c_C;	
+	n_D = c_D;
+	o_fDone = 0;
+	o_Text = 0;
 	n_State = c_State;
-    n_Rnd = c_Rnd;
-    n_L = c_L;
-    n_R = c_R;
-    n_C = c_C;
-    n_D = c_D;
-	o_fDone=0;
-	o_Text=0;
 	case(c_State)
-		IDLE	:	begin
+		IDLE	: begin
 			if(i_fStart) begin
+				c_Rnd = 0;
 				n_L = IP_o[63:32];
 				n_R = IP_o[31: 0];
-				n_C = i_fDec ? PC1_o[55:28] : ROL_o[55:28];
-				n_D = i_fDec ? PC1_o[27: 0] : ROL_o[27: 0];
-				n_State   = i_fDec ? DEC    : ENC;
+				n_C = i_fDec ? PC1_o[55:28] : {PC1_o[54:28],PC1_o[55]};
+				n_D = i_fDec ? PC1_o[27: 0] : {PC1_o[26: 0],PC1_o[27]};
+				n_State = i_fDec ? DEC : ENC;
 			end
 			else begin
-				n_Rnd=0;
-				n_L=0;
-				n_R=0;
-				n_C=0;
-				n_D=0;
-				o_fDone=0;
-				o_Text=0;
+				n_L = 0;
+				n_R = 0;
+				n_C = 0;
+				n_D = 0;
 			end
 		end
-		DONE	:	begin
-			n_L=0;
-			n_R=0;
-			n_C=0;
-			n_D=0;
-			o_fDone=1;
-			o_Text=InvIP_o;
-		end
-		default	:	begin
+		DEC		: begin
 			n_Rnd = c_Rnd + 1;
 			n_L = c_R;
-			n_R = c_L^P_o;
-			n_C = ROL_o[55:28];
-			n_D = ROL_o[27: 0];
+			n_R = c_L^PT_o;
+			n_C = Rot_C;
+			n_D = Rot_D;
 			if(c_Rnd==15) n_State = DONE;
+		end
+		ENC		: begin
+			n_Rnd = c_Rnd + 1;
+			n_L = c_R;
+			n_R = c_L^PT_o;
+			n_C = Rot_C;
+			n_D = Rot_D;
+			if(c_Rnd==15) n_State = DONE;
+		end
+		DONE	: begin
+			n_Rnd = 0;
+			n_L = 0;
+			n_R = 0;
+			n_C = 0;
+			n_D = 0;
+			o_fDone = 1;
+			o_Text = InvIP_o;
+			n_State = IDLE;
 		end
 	endcase
 end
