@@ -61,6 +61,7 @@ always @* begin
 	n_Text 	  = c_Text;
 	n_Key 	  = c_Key;
 	n_ByteCnt = 0;
+	n_State = c_State;
 
 	case (c_State)
 		IDLE	: begin
@@ -91,7 +92,7 @@ always @* begin
 			else if(TX_o_fDone) n_State = TX_TEXT;
 		end
 		TX_TEXT	: begin
-			n_ByteCnt = RX_o_fDone ? c_ByteCnt + 1 : c_ByteCnt;
+			n_ByteCnt = TX_o_fDone ? c_ByteCnt + 1 : c_ByteCnt;
 			n_Text = TX_o_fDone ? {c_Text[55:0],RX_o_Data} : c_Text;
 			if(TX_o_fDone && fLstByte) n_State = IDLE;
 		end
