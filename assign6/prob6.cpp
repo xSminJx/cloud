@@ -6,14 +6,14 @@ void printv(vector<bool>& v) {
 	cout << endl;
 }
 
-void cout_dif(vector<bool>& v, int n, int k) { // n: ÇöÀç °¡¸®Å°´Â vÀÇ ÀÎµ¦½º, k: ³²Àº º¯°æ È½¼ö
+void cout_dif(vector<bool>& v, int n, int k) { // n: í˜„ìž¬ ê°€ë¦¬í‚¤ëŠ” vì˜ ì¸ë±ìŠ¤, k: ë‚¨ì€ ë³€ê²½ íšŸìˆ˜
 	if (k == 0) printv(v);
 	else {
-		if (v.size() - n > k) { // Áö±ÝºÎÅÍ ÀüºÎ µÚÁýÁö ¾Ê¾Æµµ µÉ ¶§
-			cout_dif(v, n + 1, k); // n¹ø ¿ä¼Ò¸¦ µÚÁýÁö ¾Ê°í ÁøÇà
+		if (v.size() - n > k) { // ì§€ê¸ˆë¶€í„° ì „ë¶€ ë’¤ì§‘ì§€ ì•Šì•„ë„ ë  ë•Œ
+			cout_dif(v, n + 1, k); // në²ˆ ìš”ì†Œë¥¼ ë’¤ì§‘ì§€ ì•Šê³  ì§„í–‰
 		}
 		v[n] = !v[n];
-		cout_dif(v, n + 1, k - 1); // n¹ø ¿ä¼Ò¸¦ µÚÁý°í ÁøÇà
+		cout_dif(v, n + 1, k - 1); // në²ˆ ìš”ì†Œë¥¼ ë’¤ì§‘ê³  ì§„í–‰
 		v[n] = !v[n];
 	}
 }
@@ -22,11 +22,8 @@ int main() {
 	string str;
 	int k;
 	cin >> str >> k;
-	stringstream ss(str);
 	vector<bool> v;
-
-	char c;
-	while (ss >> c) v.push_back(c - '0');
+	for (auto i : str) v.push_back(i - '0');
 
 	cout_dif(v, 0, k);
 	return 0;
