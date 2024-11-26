@@ -9,34 +9,34 @@ using matrix = vector<vector<node>>;
 
 int dx[] = { 1,0,-1,0 };
 int dy[] = { 0,-1,0,1 };
+int ex, ey;
 
 bool inrange(matrix& v, int x, int y) {
 	return 0 <= x && x < v.size() && 0 <= y && y < v.size();
 }
 
-void dfs(matrix& v, int x, int y) {
+int dfs(matrix& v, int x, int y) {
+	if (x == ex && y == ey) return 1;
 	v[x][y].visit = 1;
-	/*cout << endl;
-	for (auto i : v) {
-		for (auto j : i) cout << j.path << " ";
-		cout << endl;
-	}*/
 	for (int i = 0; i < 4; i++) {
 		int dxx = x + dx[i], dyy = y + dy[i];
-
+		if (inrange(v, dxx, dyy) && !v[dxx][dyy].wall && !v[dxx][dyy].visit) v[x][y].path += dfs(v, dxx, dyy);
 	}
+	v[x][y].visit = 0;
+	int res = v[x][y].path;
+	v[x][y].path = 0;
+	return res;
 }
 
 int main() {
 	int n;
 	cin >> n;
+	ex = ey = n - 1;
 	matrix v(n, vector<node>(n));
 	for (auto& i : v) {
 		for (auto& j : i) cin >> j.wall;
 	}
 
-	v[0][0].path = 1;
-	dfs(v, 0, 0);
-	cout << v[n - 1][n - 1].path;
+	cout << dfs(v, 0, 0);
 	return 0;
 }
