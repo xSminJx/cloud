@@ -430,7 +430,7 @@ always @* begin
 	case(c_State)
 		IDLE	: begin
 			if(i_fStart) begin
-				c_Rnd = 0;
+				n_Rnd = 0;
 				n_L = IP_o[63:32];
 				n_R = IP_o[31: 0];
 				n_C = i_fDec ? PC1_o[55:28] : {PC1_o[54:28],PC1_o[55]};
