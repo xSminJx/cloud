@@ -39,6 +39,12 @@ assign TX_i_DATA = c_State == TX_RES ? c_Cmd : c_Text[63:56];
 assign DES_i_fStart = c_State == START_DES;
 assign fLstByte = c_ByteCnt == 3'h7;
 
+assign o_LED[0] = i_Clk;
+assign o_LED[1] = (c_Key != 0);
+assign o_LED[2] = (c_State == IDLE);
+assign o_LED[3] = (c_State == RX_KEY);
+assign o_LED[4] = (c_State == RX_TEXT);
+
 always @(posedge i_Clk, negedge i_Rst) begin
 	if(!i_Rst) begin
 		c_Key = 0;
