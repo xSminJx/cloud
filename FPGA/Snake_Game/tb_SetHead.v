@@ -14,7 +14,7 @@ reg [6:0] i_Head_x, i_Head_y;
 always
 	#10 Clk = ~Clk;
 
-SetHead S0(Clk, Rst, i_Way, i_Push, i_Head_x, i_Head_y, , );
+SetHead S0(Clk, Rst, i_Way, i_Push, i_Head_x, i_Head_y, , ,);
 
 initial begin
 	$dumpfile("test_out.vcd");
