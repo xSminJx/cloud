@@ -14,19 +14,14 @@ module Snake_Game (
 
     parameter XSIZE     = 60,
               YSIZE     = 80,
-              LST_CLK   = 25_000_000;
-              UP        = 0,
-              DOWN      = 1,
-              RIGHT     = 2,
-              LEFT      = 3,
+              LST_CLK   = 25_000_000,
 
               IDLE      = 3'b000,
               RUN       = 3'b001,
               CHANGE    = 3'b010,
-              SETQU     = 3'b011,
-              TRANSPORT = 3'b100,
-              PAUSE     = 3'b101,
-              STOP      = 3'b110;
+              SETBODY   = 3'b011,
+              PAUSE     = 3'b100,
+              STOP      = 3'b101;
 
     parameter DEF_SPD   = 2;
 
@@ -44,9 +39,11 @@ module Snake_Game (
     reg [4:0]  c_Speed, n_Speed;
     reg [4:0]  c_SpdTimeCnt, n_SpdTimeCnt; // 먹이를 먹으면 일정 시간동안 속도가 빨라지는데, 그 일정시간을 저장할 레지스터
 
+    wire o_Head_x, o_Head_y;
+
     wire isLstClk = c_ClkCnt <= LST_CLK;
     wire isEat = (n_Head_x == c_Item_x && n_Head_y == c_Item_y) && c_State == CHANGE;
-    wire isGameOver = (n_Head_Lo_x == 0 || n_Head_Lo_y == 0 || n_Head_Lo_x > XSIZE + 1 || n_Head_Lo_y > YSIZE); // 그리고 몸통에 박았는지도 확인(병렬처리하셈 아니면 모듈 만들던가)
+    wire isGameOver = (n_Head_x == 0 || n_Head_y == 0 || n_Heao_x > XSIZE + 1 || n_Head_y > YSIZE); // 그리고 몸통에 박았는지도 확인(병렬처리하셈 아니면 모듈 만들던가)
     wire isSpdDw = c_SpdTimeCnt = 16;
 
     //사이즈값(2진수) -> FND로 변환하는거 추가해야함(스탑워치에서 했던거 써서 모듈로 따로 분리하면 될듯)
@@ -76,6 +73,7 @@ module Snake_Game (
         end
     end
 
+    SetHead S0 (i_Clk, i_Rst, c_Way, i_Push, c_Head_x, c_Head_y, o_Head_x, o_Head_y);
 
     always @* begin
         n_Head_x = c_Head_x;
@@ -100,15 +98,13 @@ module Snake_Game (
             RUN  : begin
                 n_ClkCnt = isLstClk ? 0 : c_ClkCnt + c_Speed;
                 if(isLstClk) begin
-                    n_Size = isEat ? c_Size + 1 : c_Size;
-
                     //속도 조절 로직
                     n_SpdTimeCnt = isSpdDw ? 0 : c_SpdTimeCnt + 1;
                     n_Speed = isSpdDw ? (c_Speed > DEF_SPD ? c_Speed - 1 : c_Speed) : c_Speed;
 
                     //헤드 위치, 방향 갱신
-                    if(&i_Push || isUnWay); // 숫자(방향)값 넣으면 헤드 위치 갱신해주는 모듈 만들어오셈
-                    else;
+                    {n_Head_x,n_Head_y} = {o_Head_x,o_Head_y};
+
                     n_State = CHANGE;
                 end
                 n_State = i_Pause ? PAUSE : RUN;
@@ -122,13 +118,9 @@ module Snake_Game (
                 end
                 n_State = o_isMakeItem_Done ? (isGameOver ? STOP : SETQU) : c_State;
             end
-            SETQU : begin // 사이즈값 갱신했으니 그걸로 몸통 큐 갱신
+            SETBODY : begin // 사이즈값 갱신했으니 그걸로 몸통 큐 갱신
                 {n_Body_x,n_Body_y} = ; // 사이즈값, 현재 몸통 큐 받아서 큐 갱신하는 함수 만드셈
-                n_State = isSetQu_Done ? TRANSPORT : c_State;
-            end
-            TRANSPORT : begin
-                //별거없고 TRANSPORT상태 되면 출력 모듈에 큐 전달
-                n_State = isVGA_Done ? RUN : TRANSPORT;
+                n_State = isSetQu_Done ? RUN : c_State;
             end
             PAUSE : begin
                 n_State = !i_Pause ? RUN : c_State;
