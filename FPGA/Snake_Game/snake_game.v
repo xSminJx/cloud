@@ -1,21 +1,23 @@
 module Snake_Game (
     i_Clk, i_Rst,
-    i_Pause, i_Speedup, i_Push,
-    o_FND1, o_FND2, o_FND3, o_vga
+    i_Pause, i_Push,
+    o_Speed_FND1, o_Speed_FND2, o_Score_FND1, o_Score_FND2, o_Score_FND3,
+    o_Red, o_Blue, o_Green
 );
     
     input i_Clk, i_Rst;
-    input [7:0] i_Speedup;
     input [3:0] i_Push;
     input i_Pause;
 
-    output [6:0] o_FND1, o_FND2, o_FND3;
-    // output vga;
+    output [6:0] o_Speed_FND1, o_Speed_FND2, o_Score_FND1,
+                 o_Score_FND2, o_Score_FND3;
+    output [6:0] o_Hsync, o_Vsync;
+    output [3:0] o_Red, o_Blue, o_Green;
 
-    parameter XSIZE     = 60,
-              YSIZE     = 80,
+    parameter XSIZE     = 48,
+              YSIZE     = 64,
               MAX_SIZE  = XSIZE*YSIZE,
-              LST_CLK   = 25_000_000,
+              LST_CLK   = 10_000, // 원래값 : 25_000_000, 시뮬레이션 위해 10_000으로 임시 변경
 
               IDLE      = 3'b000,
               RUN       = 3'b001,
@@ -29,11 +31,11 @@ module Snake_Game (
 
     //좌표 0, 0은 NULL역할
     reg [24:0] c_ClkCnt, n_ClkCnt;
-    reg [6:0]  c_Body_x[0:MAX_SIZE-1], n_Body_x[0:MAX_SIZE-1], // 뱀의 몸통을 저장할 배열(큐 역할)
+    reg [5:0]  c_Body_x[0:MAX_SIZE-1], n_Body_x[0:MAX_SIZE-1], // 뱀의 몸통을 저장할 배열(큐 역할)
                c_Body_y[0:MAX_SIZE-1], n_Body_y[0:MAX_SIZE-1]; 
-    reg [6:0]  c_Head_x, n_Head_x,   // 뱀의 머리 위치 저장
+    reg [5:0]  c_Head_x, n_Head_x,   // 뱀의 머리 위치 저장
                c_Head_y, n_Head_y;
-    reg [6:0]  c_Item_x, n_Item_x,   // 아이템 위치 저장
+    reg [5:0]  c_Item_x, n_Item_x,   // 아이템 위치 저장
                c_Item_y, n_Item_y;
     reg [8:0]  c_Size, n_Size;       // 뱀 크기(점수랑 같은 역할)
     reg [1:0]  c_Way, n_Way,         // 뱀이 움직였던 방향
@@ -42,9 +44,9 @@ module Snake_Game (
     reg [4:0]  c_Speed, n_Speed;
     reg [4:0]  c_SpdTimeCnt, n_SpdTimeCnt; // 먹이를 먹으면 일정 시간동안 속도가 빨라지는데, 그 일정시간을 저장할 레지스터
 
-    wire [6:0] SH_o_Head_x, SH_o_Head_y;
+    wire [5:0] SH_o_Head_x, SH_o_Head_y;
     wire [1:0] SH_o_Way;
-    wire [6:0] SB_o_Body_x[0:MAX_SIZE-1], SB_o_Body_y[0:MAX_SIZE-1];
+    wire [5:0] SB_o_Body_x[0:MAX_SIZE-1], SB_o_Body_y[0:MAX_SIZE-1];
     
     wire isLstClk = c_ClkCnt <= LST_CLK;
     wire isEat = (n_Head_x == c_Item_x && n_Head_y == c_Item_y) && c_State == CHANGE;
@@ -69,8 +71,8 @@ module Snake_Game (
             c_SpdTimeCnt = 0;
 
             for(j=0;j<DEF_SIZE;j=j+1) begin
-                c_Body_x[i]=c_Head_x;
-                c_Body_y[i]=c_Head_y;
+                c_Body_x[j]=c_Head_x;
+                c_Body_y[j]=c_Head_y;
             end
         end else begin
             c_ClkCnt     = n_ClkCnt;
@@ -84,8 +86,8 @@ module Snake_Game (
             c_SpdTimeCnt = n_SpdTimeCnt;
 
             for(j=0;j<MAX_SIZE;j=j+1) begin
-                c_Body_x[i]=n_Body_x[i];
-                c_Body_y[i]=n_Body_y[i];
+                c_Body_x[j]=n_Body_x[j];
+                c_Body_y[j]=n_Body_y[j];
             end
         end
     end
@@ -94,7 +96,7 @@ module Snake_Game (
                 c_Way, c_Push, c_Head_x, c_Head_y,
                 SH_o_Head_x, SH_o_Head_y, SH_o_Way);
 
-    integer i;
+    integer i, k;
     always @* begin
         n_Head_x = c_Head_x;
         n_Head_y = c_Head_y;
@@ -107,6 +109,11 @@ module Snake_Game (
         n_State  = c_State;
         n_Speed  = c_Speed;
         n_SpdTimeCnt = c_SpdTimeCnt;
+        
+        for(k=0;k<MAX_SIZE;k=k+1) begin
+            n_Body_x[k]=c_Body_x[k];
+            n_Body_y[k]=c_Body_y[k];
+        end       
 
         case(c_State)
             IDLE : begin

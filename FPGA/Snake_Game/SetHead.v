@@ -7,9 +7,9 @@ module SetHead(
     input i_Clk, i_Rst;
     input [1:0] i_Way;
     input [1:0] i_Push;
-    input [6:0] i_Head_x, i_Head_y;
+    input [5:0] i_Head_x, i_Head_y;
 
-    output [6:0] o_Head_x, o_Head_y;
+    output [5:0] o_Head_x, o_Head_y;
     output [1:0] o_Way;
     parameter   UP    = 0,
               	DOWN  = 1,
