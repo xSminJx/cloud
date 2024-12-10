@@ -1,16 +1,16 @@
 module Snake_Game (
     i_Clk, i_Rst,
     i_Pause, i_Push,
-    o_Speed_FND1, o_Speed_FND2, o_Score_FND1, o_Score_FND2, o_Score_FND3,
-    o_Red, o_Blue, o_Green
+    o_Speed_FND0, o_Speed_FND1, o_Score_FND0, o_Score_FND1, o_Score_FND2, o_Score_FND3,
+    o_hsync, o_vsync, o_red, o_blue, o_green
 );
     
     input i_Clk, i_Rst;
     input [3:0] i_Push;
     input i_Pause;
 
-    output [6:0] o_Speed_FND1, o_Speed_FND2, o_Score_FND1,
-                 o_Score_FND2, o_Score_FND3;
+    output [6:0] o_Speed_FND0, o_Speed_FND1, o_Score_FND0,
+                 o_Score_FND1, o_Score_FND2, o_Score_FND3;
     output [6:0] o_Hsync, o_Vsync;
     output [3:0] o_Red, o_Blue, o_Green;
 
@@ -36,7 +36,7 @@ module Snake_Game (
                c_Head_y, n_Head_y;
     reg [5:0]  c_Item_x, n_Item_x,   // 아이템 위치 저장
                c_Item_y, n_Item_y;
-    reg [8:0]  c_Size, n_Size;       // 뱀 크기(점수랑 같은 역할)
+    reg [11:0] c_Size, n_Size;       // 뱀 크기(점수랑 같은 역할)
     reg [1:0]  c_Way, n_Way,         // 뱀이 움직였던 방향
                c_Push, n_Push;       // 조이스틱 입력 저장
     reg [2:0]  c_State, n_State;
@@ -54,8 +54,8 @@ module Snake_Game (
 
     //사이즈값(2진수) -> FND로 변환하는거 추가해야함(스탑워치에서 했던거 써서 모듈로 따로 분리하면 될듯)
 
-    input [MAX_SIZE * 6-1:0] i_Body_x_flat, // 이거 몸통 배열을 벡터로 만든건데 모듈에 넣을거임
-    input [MAX_SIZE * 6-1:0] i_Body_y_flat,
+    wire [MAX_SIZE * 6-1:0] i_Body_x_flat; // 이거 몸통 배열을 벡터로 만든건데 모듈에 넣을거임
+    wire [MAX_SIZE * 6-1:0] i_Body_y_flat;
     genvar i;
     generate
         for(i=0;i<MAX_SIZE;i=i+1) begin
@@ -6244,9 +6244,27 @@ module Snake_Game (
         end
     end
 
-    SetHead S0 (i_Clk, i_Rst,
-                c_Way, c_Push, c_Head_x, c_Head_y,
-                SH_o_Head_x, SH_o_Head_y, SH_o_Way);
+    // SetHead모듈 연결
+    SetHead SH0 (i_Clk, i_Rst,
+                 c_Way, c_Push, c_Head_x, c_Head_y,
+                 SH_o_Head_x, SH_o_Head_y, SH_o_Way);
+
+    // 점수, 속도 모듈 연결
+    wire [3:0] SF_o_F0, SF_o_F1, CF_o_F0, CF_o_F1, CF_o_F2, CF_o_F3;
+    SpeedFND SF0(c_Speed, SF_o_F0, SF_o_F1);
+    ScoreFND CF0(c_Size, CF_o_F0, CF_o_F1, CF_o_F2, CF_o_F3);
+    FND F0(SF_o_F0, o_Speed_FND0);
+    FND F1(SF_o_F1, o_Speed_FND1);
+    FND F2(CF_o_F0, o_Score_FND0);
+    FND F3(CF_o_F0, o_Score_FND1);
+    FND F4(CF_o_F0, o_Score_FND2);
+    FND F5(CF_o_F0, o_Score_FND3);
+
+    //VGA모듈 연결
+    wire o_hsync, o_vsync;
+    wire [3:0] o_red, o_green, o_blue;
+    Vga V0(i_Clk, i_Rst, i_Body_x_flat, i_Body_y_flat, c_Item_x, c_Item_y, c_Size,
+           o_hsync, o_vsync, o_red, o_blue, o_green);
 
     always @* begin
         n_Head_x = c_Head_x;
