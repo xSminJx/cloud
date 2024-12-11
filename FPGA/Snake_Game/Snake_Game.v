@@ -2,7 +2,7 @@ module Snake_Game (
     i_Clk, i_Rst,
     i_Pause, i_Push,
     o_Speed_FND0, o_Speed_FND1, o_Score_FND0, o_Score_FND1, o_Score_FND2, o_Score_FND3,
-    o_hsync, o_vsync, o_red, o_blue, o_green
+    o_Hsync, o_Vsync, o_Red, o_Blue, o_Green
 );
     
     input i_Clk, i_Rst;
@@ -58,7 +58,7 @@ module Snake_Game (
     wire [MAX_SIZE * 6-1:0] i_Body_y_flat;
     genvar i;
     generate
-        for(i=0;i<MAX_SIZE;i=i+1) begin
+        for(i=0;i<MAX_SIZE;i=i+1) begin : GetVector
             assign i_Body_x_flat[i*6 +:6] = c_Body_x[i];
             assign i_Body_y_flat[i*6 +:6] = c_Body_y[i];
         end
@@ -6261,12 +6261,10 @@ module Snake_Game (
     FND F5(CF_o_F0, o_Score_FND3);
 
     //VGA모듈 연결
-    output o_hsync, o_vsync;
-    output [7:0] o_red, o_green, o_blue;
     Vga V0(i_Clk, i_Rst, i_Body_x_flat, i_Body_y_flat, c_Item_x, c_Item_y, c_Size,
-           o_hsync, o_vsync, o_red, o_blue, o_green);
+           o_Hsync, o_Vsync, o_Red, o_Blue, o_Green);
 
-    wire o_isMakeItem_Done;
+    wire o_isMakeItem_Done = 1;
 
     always @* begin
         n_Head_x = c_Head_x;
