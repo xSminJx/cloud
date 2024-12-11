@@ -6261,10 +6261,12 @@ module Snake_Game (
     FND F5(CF_o_F0, o_Score_FND3);
 
     //VGA모듈 연결
-    wire o_hsync, o_vsync;
-    wire [3:0] o_red, o_green, o_blue;
+    output o_hsync, o_vsync;
+    output [7:0] o_red, o_green, o_blue;
     Vga V0(i_Clk, i_Rst, i_Body_x_flat, i_Body_y_flat, c_Item_x, c_Item_y, c_Size,
            o_hsync, o_vsync, o_red, o_blue, o_green);
+
+    wire o_isMakeItem_Done;
 
     always @* begin
         n_Head_x = c_Head_x;

@@ -1,5 +1,5 @@
 module SpeedFND (i_speed, o_speed_one, o_speed_ten);
-    input  [7:0] i_speed;
+    input  [4:0] i_speed;
     output reg [3:0] o_speed_one;
     output reg [3:0] o_speed_ten; 
 
