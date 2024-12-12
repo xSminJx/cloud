@@ -1,7 +1,8 @@
 
-module LFSR(i_Clk, i_Rst, o_RandNum);
+module LFSR(i_Clk, i_Rst, i_Seed, o_RandNum);
 
 input           i_Clk, i_Rst;
+input   [6:0]   i_Seed;
 output  [6:0]   o_RandNum;
 
 wire            feedback;
@@ -13,7 +14,7 @@ assign  o_RandNum   = c_State;
 
 always@ (posedge i_Clk, negedge i_Rst)
     if(!i_Rst) begin
-        c_State = 7'b00000001;
+        c_State = i_Seed;
     end else begin
         c_State = n_State;
     end

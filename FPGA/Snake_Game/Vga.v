@@ -105,9 +105,9 @@ module Vga (
             end
 
             worm_active = 0;
-            for (j=0; j < i_size; j=j+1) begin
-                if (h_count - (H_SYNC + H_BACK) >= i_worm_x[j * 6+ :6] * PIXEL_SIZE && h_count - (H_SYNC + H_BACK) < (i_worm_x[j * 6+ :6] * PIXEL_SIZE) + PIXEL_SIZE &&
-                    v_count - (V_SYNC + V_BACK) >= i_worm_y[j * 6+ :6] * PIXEL_SIZE && v_count - (V_SYNC + V_BACK) < (i_worm_y[j * 6+ :6] * PIXEL_SIZE) + PIXEL_SIZE) begin
+            for (j=0; j < i_size*6; j=j+6) begin
+                if (h_count - (H_SYNC + H_BACK) >= i_worm_x[j+5 :j] * PIXEL_SIZE && h_count - (H_SYNC + H_BACK) < (i_worm_x[j+5 :j] * PIXEL_SIZE) + PIXEL_SIZE &&
+                    v_count - (V_SYNC + V_BACK) >= i_worm_y[j+5 :j] * PIXEL_SIZE && v_count - (V_SYNC + V_BACK) < (i_worm_y[j+5 :j] * PIXEL_SIZE) + PIXEL_SIZE) begin
                         worm_active = 1;
                 end
             end

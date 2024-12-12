@@ -5,7 +5,7 @@ parameter   XSIZE = 48, YSIZE= 64, MAX_SIZE  = 100;
 
 input                       i_Clk, i_Rst;
 input   [MAX_SIZE*6-1:0]    i_Body_x, i_Body_y;
-input   [8:0]               i_Body_size;
+input   [11:0]               i_Body_size;
 output  [5:0]               o_Item_x, o_Item_y;
 output o_isMakeItem_Done;
 

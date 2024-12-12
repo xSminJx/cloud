@@ -11,7 +11,7 @@ module Snake_Game (
 
     output [6:0] o_Speed_FND0, o_Speed_FND1, o_Score_FND0,
                  o_Score_FND1, o_Score_FND2, o_Score_FND3;
-    output [6:0] o_Hsync, o_Vsync;
+    output o_Hsync, o_Vsync;
     output [3:0] o_Red, o_Blue, o_Green;
 
     parameter XSIZE     = 48,
