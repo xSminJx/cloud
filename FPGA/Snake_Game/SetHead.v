@@ -23,6 +23,6 @@ module SetHead(
 
     assign o_Way = isUnway ? i_Way : i_Push;
     assign o_Head_x = isUnway ? i_Head_x + (i_Way == UP ? -1 : (i_Way == DOWN ? 1 : 0)) : i_Head_x + (i_Push == UP ? -1 : (i_Push == DOWN ? 1 : 0));
-    assign o_Head_y = isUnway ? i_Head_y + (i_Way == LEFT ? -1 : (i_Way == RIGHT ? 1 : 0)) : i_Head_x + (i_Push == LEFT ? -1 : (i_Push == RIGHT ? 1 : 0));
+    assign o_Head_y = isUnway ? i_Head_y + (i_Way == LEFT ? -1 : (i_Way == RIGHT ? 1 : 0)) : i_Head_y + (i_Push == LEFT ? -1 : (i_Push == RIGHT ? 1 : 0));
 
 endmodule
