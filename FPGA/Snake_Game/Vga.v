@@ -1,25 +1,26 @@
 module Vga (
-    i_Clk,            // 50 MHz 입력 클럭
-    i_Rst,            // 리셋 신호
+    i_Clk,            
+    i_Rst,           
     i_worm_x,
     i_worm_y,
-    i_item_x,           // 아이템의 x 위치 (0~64)
-    i_item_y,           // 아이템의 y 위치 (0~48)
+    i_item_x,           
+    i_item_y,           
     i_size,
-    o_hsync,            // 수평 동기 신호
-    o_vsync,            // 수직 동기 신호
-    o_red,              // 빨강 색상 데이터
-    o_green,            // 초록 색상 데이터
-    o_blue              // 파랑 색상 데이터
+    o_hsync,            
+    o_vsync,            
+    o_red,              
+    o_green,           
+    o_blue             
 );
     
     input i_Clk;
     input i_Rst;
 
     parameter MAX_SIZE = 100;
-    input [MAX_SIZE * 6 - 1: 0] i_worm_x;
-    input [MAX_SIZE * 6 - 1: 0] i_worm_y;
-    
+    input [MAX_SIZE*6 - 1: 0] i_worm_x;
+    input [MAX_SIZE*6 - 1: 0] i_worm_y;
+    reg [MAX_SIZE*6 - 1: 0] i_worm_x;
+	 reg [MAX_SIZE*6 - 1: 0] i_worm_y;
     input [5:0] i_item_x;
     input [5:0] i_item_y;
 
@@ -32,7 +33,7 @@ module Vga (
     output reg[3:0] o_green;
     output reg[3:0] o_blue;
 
-     // VGA 640x480 @ 60Hz (25.175 MHz 픽셀 클럭) 타이밍
+ 
     parameter H_DISPLAY = 640;
     parameter H_FRONT = 16;
     parameter H_SYNC = 96;
@@ -51,15 +52,13 @@ module Vga (
     parameter WALL_BOTTOM = V_TOTAL - PIXEL_SIZE; // 515
 
 
-    reg [9:0] h_count; // 수평 픽셀 카운터
-    reg [9:0] v_count; // 수직 픽셀 카운터
+    reg [9:0] h_count; 
+    reg [9:0] v_count; 
 
 
-    // 동기 신호 생성
     assign o_hsync = (h_count < H_SYNC) ? 1'b1 : 1'b0;
     assign o_vsync = (v_count < V_SYNC) ? 1'b1 : 1'b0;
 
-    // 아이템 위치 확대 스케일링
     wire [9:0] item_x_scaled = i_item_x * PIXEL_SIZE;
     wire [9:0] item_y_scaled = i_item_y * PIXEL_SIZE;
 
@@ -92,7 +91,6 @@ module Vga (
             o_blue = 0;
             worm_active = 0;
         end else begin
-            // 수평 및 수직 카운터
             if (h_count < H_TOTAL - 1) begin
                 h_count = h_count + 1;
             end else begin
@@ -105,41 +103,36 @@ module Vga (
             end
 
             worm_active = 0;
-            for (j=0; j < i_size*6; j=j+6) begin
-                if (h_count - (H_SYNC + H_BACK) >= i_worm_x[j+5 :j] * PIXEL_SIZE && h_count - (H_SYNC + H_BACK) < (i_worm_x[j+5 :j] * PIXEL_SIZE) + PIXEL_SIZE &&
-                    v_count - (V_SYNC + V_BACK) >= i_worm_y[j+5 :j] * PIXEL_SIZE && v_count - (V_SYNC + V_BACK) < (i_worm_y[j+5 :j] * PIXEL_SIZE) + PIXEL_SIZE) begin
+            for (j=0; j < i_size && j < MAX_SIZE; j=j+1) begin
+                if ((h_count - (H_SYNC + H_BACK) >= i_worm_x[j*6+:6] * PIXEL_SIZE) && (h_count - (H_SYNC + H_BACK) < (i_worm_x[j*6+:6] * PIXEL_SIZE) + PIXEL_SIZE )&&
+                    (v_count - (V_SYNC + V_BACK) >= i_worm_y[j*6+:6] * PIXEL_SIZE ) && ( v_count - (V_SYNC + V_BACK) < (i_worm_y[j*6+:6] * PIXEL_SIZE) + PIXEL_SIZE)) begin
                         worm_active = 1;
                 end
             end
             if (active_area) begin
 
                 if (worm_active) begin
-                    // 지렁이 위치 (빨강색)
-                    o_red <= 4'hF;
-                    o_green <= 4'h0;
-                    o_blue <= 4'h0;
+                    o_red = 4'hF;
+                    o_green = 4'h0;
+                    o_blue = 4'h0;
 
                 end else if (item_active) begin
-                    // 아이템 위치 (초록색)
-                    o_red <= 4'h0;
-                    o_green <= 4'hF;
-                    o_blue <= 4'h0;
+                    o_red = 4'h0;
+                    o_green = 4'hF;
+                    o_blue = 4'h0;
                 end else if (edge_active) begin
-                    // 가장자리 (흰색)
-                    o_red <= 4'hF;
-                    o_green <= 4'hF;
-                    o_blue <= 4'hF;
+                    o_red = 4'hF;
+                    o_green = 4'hF;
+                    o_blue = 4'hF;
                 end else begin
-                    // 나머지 영역 (검정색)
-                    o_red <= 4'h0;
-                    o_green <= 4'h0;
-                    o_blue <= 4'h0;
+                    o_red = 4'h0;
+                    o_green = 4'h0;
+                    o_blue = 4'h0;
                 end
             end else begin
-                // 640 * 480 영역 밖
-                o_red <= 4'h0;
-                o_green <= 4'h0;
-                o_blue <= 4'h0;
+                o_red = 4'h0;
+                o_green = 4'h0;
+                o_blue = 4'h0;
             end
         end
     end
