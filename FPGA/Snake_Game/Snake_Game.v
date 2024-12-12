@@ -17,7 +17,7 @@ module Snake_Game (
     parameter XSIZE     = 48,
               YSIZE     = 64,
               MAX_SIZE  = 100,
-              LST_CLK   = 1_000, // 원래값 : 25_000_000, 시뮬레이션 위해 10_000으로 임시 변경
+              LST_CLK   = 1_000, // 원래값 : 25_000_000, 시뮬레이션 위해 1_000으로 임시 변경
 
               IDLE      = 3'b000,
               RUN       = 3'b001,
@@ -42,6 +42,7 @@ module Snake_Game (
     reg [2:0]  c_State, n_State;
     reg [4:0]  c_Speed, n_Speed;
     reg [4:0]  c_SpdTimeCnt, n_SpdTimeCnt; // 먹이를 먹으면 일정 시간동안 속도가 빨라지는데, 그 일정시간을 저장할 레지스터
+    reg        c_Match, n_Match;
 
     wire [5:0] SH_o_Head_x, SH_o_Head_y;
     wire [1:0] SH_o_Way;
@@ -49,7 +50,7 @@ module Snake_Game (
     
     wire isLstClk = c_ClkCnt >= LST_CLK;
     wire isEat = (n_Head_x == c_Item_x && n_Head_y == c_Item_y) && c_State == CHANGE;
-    wire isGameOver = (n_Head_x == 0 || n_Head_y == 0 || n_Head_x > XSIZE + 1 || n_Head_y > YSIZE); // 그리고 몸통에 박았는지도 확인(병렬처리하셈 아니면 모듈 만들던가)
+    wire isGameOver = (n_Head_x == 0 || n_Head_y == 0 || n_Head_x == XSIZE - 1 || n_Head_y == YSIZE - 1) || c_Match;
     wire isSpdDw = c_SpdTimeCnt == 16;
 
     //사이즈값(2진수) -> FND로 변환하는거 추가해야함(스탑워치에서 했던거 써서 모듈로 따로 분리하면 될듯)
@@ -67,7 +68,7 @@ module Snake_Game (
             c_State      = IDLE;
             c_Speed      = DEF_SPD;
             c_SpdTimeCnt = 0;
-
+            c_Match      = 0;
             c_Body_x     = c_Head_x;
             c_Body_y     = c_Head_y;
         end else begin
@@ -80,6 +81,8 @@ module Snake_Game (
             c_State      = n_State;
             c_Speed      = n_Speed;
             c_SpdTimeCnt = n_SpdTimeCnt;
+            c_Match      = n_Match;
+
             c_Body_x     = n_Body_x;
             c_Body_y     = n_Body_y;
         end
@@ -105,7 +108,11 @@ module Snake_Game (
     Vga V0(i_Clk, i_Rst, c_Body_x, c_Body_y, c_Item_x, c_Item_y, c_Size,
            o_Hsync, o_Vsync, o_Red, o_Blue, o_Green);
 
-    wire o_isMakeItem_Done = 1;
+    wire o_isMakeItem_Done;
+    wire [5:0] GI_o_Item_x, GI_o_Item_y;
+    Generate_Item_Pos GI0(i_Clk, i_Rst, c_Body_x, c_Body_y, c_Size,
+                          GI_o_Item_x, GI_o_Item_y, o_isMakeItem_Done);
+
 
     integer i, j;
     always @* begin
@@ -120,6 +127,7 @@ module Snake_Game (
         n_State  = c_State;
         n_Speed  = c_Speed;
         n_SpdTimeCnt = c_SpdTimeCnt;
+        n_Match  = 0;
         
         n_Body_x = c_Body_x;
         n_Body_y = c_Body_y;
@@ -152,12 +160,18 @@ module Snake_Game (
             CHANGE : begin // n_Head값들 바뀐거로 사이즈값 변경이랑 게임 오버 판정, 아이템 새로 만듬
                 if(isEat) begin
                     n_Size = c_Size + (c_Speed >> 1); // 속도의 절반만큼 점수가 오름
-                    //n_Item_x = ;
-                    //n_Item_y = ; 
+                    if(o_isMakeItem_Done) begin
+                        n_Item_x = GI_o_Item_x;
+                        n_Item_y = GI_o_Item_y;
+                    end
                     n_Speed = c_Speed + 1;
                     n_SpdTimeCnt = 0;
                 end
-                n_State = o_isMakeItem_Done ? (isGameOver ? STOP : SETBODY) : c_State;
+                for(i = 0; i < c_Size*6-1; i = i+6) begin
+                    if(c_Head_x == n_Body_x[i +: 6] && n_Head_y == c_Body_y[i +: 6])
+                        n_Match = 1;
+                end
+                n_State = isGameOver ? STOP : (o_isMakeItem_Done ? SETBODY : c_State);
             end
             SETBODY : begin // 사이즈값 갱신했으니 그걸로 몸통 큐 갱신
                 n_Body_x[0] = c_Head_x;

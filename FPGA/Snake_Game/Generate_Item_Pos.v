@@ -1,29 +1,35 @@
 
-module Generate_Item_Pos(i_Clk, i_Rst, i_Body_x, i_Body_y, i_Body_size, o_item_x, o_item_y);
+module Generate_Item_Pos(i_Clk, i_Rst, i_Body_x, i_Body_y, i_Body_size, o_Item_x, o_Item_y, o_isMakeItem_Done);
 
-input               i_Clk, i_Rst;
-input   [3359:0]    i_Body_x, i_Body_y;
-input   [8:0]       i_Body_size;
-output  [6:0]       o_item_x, o_item_y;
+parameter   XSIZE = 48, YSIZE= 64, MAX_SIZE  = 100;
 
+input                       i_Clk, i_Rst;
+input   [MAX_SIZE*6-1:0]    i_Body_x, i_Body_y;
+input   [8:0]               i_Body_size;
+output  [5:0]               o_Item_x, o_Item_y;
+output o_isMakeItem_Done;
 
 wire    [6:0]   random_x, random_y;
+wire    [6:0]   seed_x, seed_y;
 reg     [1:0]   c_State, n_State;
-reg     [6:0]   c_Item_x, n_Item_x;
-reg     [6:0]   c_Item_y, n_Item_y;
-reg     [6:0]   r_Item_x, r_Item_y;
+reg     [5:0]   c_Item_x, n_Item_x;
+reg     [5:0]   c_Item_y, n_Item_y;
+reg     [5:0]   r_Item_x, r_Item_y;
 reg             c_Match, n_Match;
-reg     [8:0]   c_CheckCnt, n_CheckCnt;
 
 parameter   IDLE = 2'b00, CHECK = 2'b01, DONE = 2'b10;
 
-wire    isCheck = i_Body_size == n_CheckCnt;
+integer i;
 
-assign  o_item_x = r_Item_x;
-assign  o_item_y = r_Item_y;
+assign  o_Item_x = r_Item_x;
+assign  o_Item_y = r_Item_y;
 
-LFSR LFSR_X (i_Clk, i_Rst, random_x);
-LFSR LFSR_Y (i_Clk, i_Rst, random_y);
+assign seed_x = c_Item_x ? random_x : 7'b1010101;
+assign seed_y = c_Item_y ? random_y : 7'b1000011;
+assign o_isMakeItem_Done = c_State == DONE;
+
+LFSR LFSR_X (i_Clk, i_Rst, seed_x, random_x);
+LFSR LFSR_Y (i_Clk, i_Rst, seed_y, random_y);
 
 
 always@ (posedge i_Clk, negedge i_Rst)
@@ -31,40 +37,33 @@ always@ (posedge i_Clk, negedge i_Rst)
         c_State     = 0;
         c_Item_x    = 0;
         c_Item_y    = 0;
-        r_Item_x    = 0;
-        r_Item_y    = 0;
         c_Match     = 0;
-        c_CheckCnt  = 0;
     end else begin
         c_State     = n_State;
         c_Item_x    = n_Item_x;
         c_Item_y    = n_Item_y;
         c_Match     = n_Match;
-        c_CheckCnt  = n_CheckCnt;
     end
 
 
 always@ *
 begin
-    n_CheckCnt = 0;
     n_Match = 0;
 
     case(c_State)
         IDLE: begin
-            n_Item_x = random_x > 80 ? random_x - 80 : random_x;
-            n_Item_y = random_y > 60 ? random_y - 60 : random_y;
+            n_Item_x = random_x > XSIZE ? random_x - XSIZE : random_x;
+            n_Item_y = random_y > YSIZE ? random_y - YSIZE : random_y;
 
             n_State = CHECK;
         end
         CHECK: begin
-            if(c_Item_x == i_Body_x[c_CheckCnt*7 +: 7] || c_Item_y == i_Body_y[c_CheckCnt*7 +: 7]) begin
-                n_Match = 1;
-            end else begin
-                n_CheckCnt = c_CheckCnt + 1; 
+            for(i = 0; i < i_Body_size*6-1; i = i+6) begin
+                if(c_Item_x == i_Body_x[i +: 6] && c_Item_y == i_Body_y[i +: 6])
+                    n_Match = 1;
             end
             
-            if(isCheck) n_State = DONE;
-            if(c_Match) n_State = IDLE;
+            n_State = c_Match ? IDLE : DONE;
         end
         DONE: begin
             r_Item_x = c_Item_x;
