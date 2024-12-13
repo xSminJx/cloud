@@ -27,8 +27,7 @@ begin
     #10000 i_Pause = 0;
 
     #50000 i_Push = 4'b1101;
-    #50000 i_Push = 4'b1011;
-    #50000 i_Push = 4'b0111;
+    #200000;
 
 	$stop;
 end
