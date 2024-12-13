@@ -16,7 +16,7 @@ module Snake_Game (
 
     parameter XSIZE     = 48,
               YSIZE     = 64,
-              MAX_SIZE  = 100,
+              MAX_SIZE  = 20,
               LST_CLK   = 1_000, // 원래값 : 25_000_000, 시뮬레이션 위해 1_000으로 임시 변경
 
               IDLE      = 3'b000,
@@ -47,10 +47,12 @@ module Snake_Game (
     wire [5:0] SH_o_Head_x, SH_o_Head_y;
     wire [1:0] SH_o_Way;
     wire [5:0] SB_o_Body_x[0:MAX_SIZE-1], SB_o_Body_y[0:MAX_SIZE-1];
-    
+    wire [19:0]  Match;
+    wire isMatch;
+
     wire isLstClk = c_ClkCnt >= LST_CLK;
     wire isEat = (n_Head_x == c_Item_x && n_Head_y == c_Item_y) && c_State == CHANGE;
-    wire isGameOver = (n_Head_x == 0 || n_Head_y == 0 || n_Head_x == XSIZE - 1 || n_Head_y == YSIZE - 1) || c_Match;
+    wire isGameOver = (n_Head_x == 0 || n_Head_y == 0 || n_Head_x == XSIZE - 1 || n_Head_y == YSIZE - 1) || |(Match[c_Size-1:0]);
     wire isSpdDw = c_SpdTimeCnt == 16;
 
     //사이즈값(2진수) -> FND로 변환하는거 추가해야함(스탑워치에서 했던거 써서 모듈로 따로 분리하면 될듯)
@@ -172,9 +174,8 @@ module Snake_Game (
                     n_Speed = c_Speed + 1;
                     n_SpdTimeCnt = 0;
                 end
-                for(i = 0; i < c_Size*6-1; i = i+6) begin
-                    if(n_Head_x == n_Body_x[i +: 6] && n_Head_y == c_Body_y[i +: 6])
-                        n_Match = 1;
+                for(i = 0; i < (c_Size-1)*6 && i < (MAX_SIZE-1*6); i = i+6) begin
+                    Match[i] = (n_Head_x == n_Body_x[i +: 6] && n_Head_y == c_Body_y[i +: 6])
                 end
                 n_State = isGameOver ? STOP : (o_isMakeItem_Done ? SETBODY : c_State);
             end
