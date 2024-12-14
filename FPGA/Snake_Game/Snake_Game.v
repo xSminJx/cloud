@@ -2,7 +2,7 @@ module Snake_Game (
     i_Clk, i_Rst,
     i_Pause, i_Push,
     o_Speed_FND0, o_Speed_FND1, o_Score_FND0, o_Score_FND1, o_Score_FND2, o_Score_FND3,
-    o_Hsync, o_Vsync, o_Red, o_Blue, o_Green
+    o_Hsync, o_Vsync, o_Red, o_Blue, o_Green, sync, blank, clk
 );
     
     input i_Clk, i_Rst;
@@ -13,6 +13,7 @@ module Snake_Game (
                  o_Score_FND1, o_Score_FND2, o_Score_FND3;
     output o_Hsync, o_Vsync;
     output [7:0] o_Red, o_Blue, o_Green;
+    output sync, blank, clk;
 
     parameter XSIZE     = 48,
               YSIZE     = 64,
@@ -43,14 +44,14 @@ module Snake_Game (
     reg [4:0]  c_Speed, n_Speed;
     reg [4:0]  c_SpdTimeCnt, n_SpdTimeCnt; // 먹이를 먹으면 일정 시간동안 속도가 빨라지는데, 그 일정시간을 저장할 레지스터
     reg        prev_isEat;
-    reg [19:0] Match;
+    reg [MAX_SIZE-1:0] c_Match, n_Match;
 
     wire [5:0] SH_o_Head_x, SH_o_Head_y;
     wire [1:0] SH_o_Way;
 
     wire isLstClk = c_ClkCnt >= LST_CLK;
     wire isEat = (n_Head_x == c_Item_x && n_Head_y == c_Item_y) && c_State == CHANGE;
-    wire isGameOver = (n_Head_x == 0 || n_Head_y == 0 || n_Head_x == XSIZE - 1 || n_Head_y == YSIZE - 1) || |Match;
+    wire isGameOver = (n_Head_x == 0 || n_Head_y == 0 || n_Head_x == XSIZE - 1 || n_Head_y == YSIZE - 1) || |n_Match;
     wire isSpdDw = c_SpdTimeCnt == 16;
 
     //사이즈값(2진수) -> FND로 변환하는거 추가해야함(스탑워치에서 했던거 써서 모듈로 따로 분리하면 될듯)
@@ -68,7 +69,7 @@ module Snake_Game (
             c_State      = IDLE;
             c_Speed      = DEF_SPD;
             c_SpdTimeCnt = 0;
-            Match        = 0;
+            c_Match        = 0;
             prev_isEat   = 0;
 
             c_Body_x     = c_Head_x;
@@ -86,6 +87,7 @@ module Snake_Game (
             c_Speed      = n_Speed;
             c_SpdTimeCnt = n_SpdTimeCnt;
             prev_isEat   = isEat;
+            c_Match      = n_Match;
 
             c_Body_x     = n_Body_x;
             c_Body_y     = n_Body_y;
@@ -131,7 +133,7 @@ module Snake_Game (
         n_State  = c_State;
         n_Speed  = c_Speed;
         n_SpdTimeCnt = c_SpdTimeCnt;
-        Match  = 0;
+        n_Match  = 0;
         
         n_Body_x = c_Body_x;
         n_Body_y = c_Body_y;
@@ -171,8 +173,8 @@ module Snake_Game (
                     n_Speed = c_Speed + 1;
                     n_SpdTimeCnt = 0;
                 end
-                for(i = 0; i < (c_Size-1)*6 && i < (MAX_SIZE-1*6); i = i+6) begin
-                    Match[i] = (n_Head_x == c_Body_x[i +: 6] && n_Head_y == c_Body_y[i +: 6]);
+                for(i = 0; i < c_Size && i < MAX_SIZE; i = i+1) begin
+                    n_Match[i] = (n_Head_x == c_Body_x[i*6 +: 6] && n_Head_y == c_Body_y[i*6 +: 6]);
                 end
                 n_State = isGameOver ? STOP : (o_isMakeItem_Done ? SETBODY : c_State);
             end
