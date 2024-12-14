@@ -11,7 +11,7 @@ always
 	#10 Clk = ~Clk;
 
 Snake_Game G0(Clk, Rst, i_Pause, i_Push,
-              , , , , , , , );
+              , , , , , , , , , ,);
 
 initial
 begin
@@ -26,8 +26,7 @@ begin
     #100000 i_Pause = 1;
     #10000 i_Pause = 0;
 
-    #50000 i_Push = 4'b1101;
-    #200000;
+    #50000 i_Push = 4'b1101; #300000;
 
 	$stop;
 end
