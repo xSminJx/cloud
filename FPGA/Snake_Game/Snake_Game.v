@@ -171,17 +171,17 @@ module Snake_Game (
             CHANGE : begin // n_Head값들 바뀐거로 사이즈값 변경이랑 게임 오버 판정, 아이템 새로 만듬
                 if(isEat && !prev_isEat) begin
                     n_Size = c_Size + (c_Speed >> 1); // 속도의 절반만큼 점수가 오름
-                    if(o_isMakeItem_Done) begin
-                        n_Item_x = GI_o_Item_x;
-                        n_Item_y = GI_o_Item_y;
-                    end
                     n_Speed = c_Speed + 1;
                     n_SpdTimeCnt = 0;
+                end
+                if(o_isMakeItem_Done) begin
+                    n_Item_x = GI_o_Item_x;
+                    n_Item_y = GI_o_Item_y;
                 end
                 for(i = 0; i < c_Size && i < MAX_SIZE; i = i+1) begin
                     Match[i] = (n_Head_x == c_Body_x[i*6 +: 6] && n_Head_y == c_Body_y[i*6 +: 6]);
                 end
-                n_State = isGameOver ? STOP : (o_isMakeItem_Done ? SETBODY : c_State);
+                n_State = isEat ? (isGameOver ? STOP : (o_isMakeItem_Done ? SETBODY : c_State)) : (isGameOver ? STOP : SETBODY);
             end
             SETBODY : begin // 사이즈값 갱신했으니 그걸로 몸통 큐 갱신
                 n_Body_x[5:0] = c_Head_x;

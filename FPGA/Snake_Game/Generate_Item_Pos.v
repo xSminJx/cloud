@@ -40,13 +40,13 @@ always@ (posedge i_Clk, negedge i_Rst)
         c_Item_y    = 0;
         r_Item_x    = 0;
         r_Item_y    = 0;
-        //Match       = 0;
+        Match       = 0;
     end else begin
         c_State     = n_State;
         c_Item_x    = n_Item_x;
         c_Item_y    = n_Item_y;
-        r_Item_x    = n_State == DONE ? c_Item_x : r_Item_x;
-        r_Item_y    = n_State == DONE ? c_Item_y : r_Item_y;
+        r_Item_x    = n_State == CHECK ? c_Item_x : r_Item_x;
+        r_Item_y    = n_State == CHECK ? c_Item_y : r_Item_y;
     end
 
 
@@ -72,7 +72,7 @@ begin
                 Match[i] = (c_Item_x == i_Body_x[i*6 +: 6] && c_Item_y == i_Body_y[i*6 +: 6]);
             end
             
-            n_State = isMatch ? IDLE : DONE;
+            n_State = isMatch ? GET : DONE;
         end
         DONE: begin
             n_State = IDLE;
