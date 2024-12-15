@@ -84,8 +84,8 @@ module Vga (
     wire edge_active =  ( (v_counter >= 0 && v_counter < 10) || (v_counter >= 470 && v_counter < 480) ||
                          (h_counter >= 0 && h_counter < 10) || (h_counter >= 630 && h_counter < 640));
 
-    wire item_active =  ( (v_counter >= item_y_scaled && v_counter < item_y_scaled + 10) &&
-                         (h_counter >= item_x_scaled && h_counter < item_x_scaled + 10));
+    wire item_active =  ( (h_counter >= item_y_scaled && h_counter < item_y_scaled + 10) &&
+                         (v_counter >= item_x_scaled && v_counter < item_x_scaled + 10));
 
 	 reg clk_25m;
     always @(posedge i_Clk or negedge i_Rst) begin
@@ -155,8 +155,8 @@ module Vga (
 
             worm_active = 0;
             for (j=0; j < i_size && j < MAX_SIZE; j=j+1) begin
-                if ((h_counter >= i_worm_x[j*6+:6] * PIXEL_SIZE) && (h_counter < (i_worm_x[j*6+:6] * PIXEL_SIZE) + PIXEL_SIZE )&&
-                    (v_counter >= i_worm_y[j*6+:6] * PIXEL_SIZE ) && ( v_counter < (i_worm_y[j*6+:6] * PIXEL_SIZE) + PIXEL_SIZE)) begin
+                if ((v_counter >= i_worm_x[j*6+:6] * PIXEL_SIZE) && (v_counter < (i_worm_x[j*6+:6] * PIXEL_SIZE) + PIXEL_SIZE )&&
+                    (h_counter >= i_worm_y[j*6+:6] * PIXEL_SIZE ) && ( h_counter < (i_worm_y[j*6+:6] * PIXEL_SIZE) + PIXEL_SIZE)) begin
                         worm_active = 1;
                 end
             end

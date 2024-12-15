@@ -1,24 +1,26 @@
 module Snake_Game (
     i_Clk, i_Rst,
-    i_Pause, i_Push,
+    i_Pause, i_Push, i_Buffer, i_Select,
     o_Speed_FND0, o_Speed_FND1, o_Score_FND0, o_Score_FND1, o_Score_FND2, o_Score_FND3,
-    o_Hsync, o_Vsync, o_Red, o_Blue, o_Green, sync, blank, clk
+    o_Hsync, o_Vsync, o_Red, o_Blue, o_Green, sync, blank, clk, o_LED
 );
     
     input i_Clk, i_Rst;
     input [3:0] i_Push;
-    input i_Pause;
+    input [2:0] i_Buffer;
+    input i_Pause, i_Select;
 
     output [6:0] o_Speed_FND0, o_Speed_FND1, o_Score_FND0,
                  o_Score_FND1, o_Score_FND2, o_Score_FND3;
     output o_Hsync, o_Vsync;
     output [7:0] o_Red, o_Blue, o_Green;
     output sync, blank, clk;
+    output [5:0] o_LED;
 
     parameter XSIZE     = 48,
               YSIZE     = 64,
               MAX_SIZE  = 20,
-              LST_CLK   = 1_000, // 원래값 : 25_000_000, 시뮬레이션 위해 1_000으로 임시 변경
+              LST_CLK   = 25_000_000, // 원래값 : 25_000_000, 시뮬레이션 위해 1_000으로 임시 변경
 
               IDLE      = 3'b000,
               RUN       = 3'b001,
@@ -42,7 +44,7 @@ module Snake_Game (
                c_Push, n_Push;       // 조이스틱 입력 저장
     reg [2:0]  c_State, n_State;
     reg [4:0]  c_Speed, n_Speed;
-    reg [4:0]  c_SpdTimeCnt, n_SpdTimeCnt; // 먹이를 먹으면 일정 시간동안 속도가 빨라지는데, 그 일정시간을 저장할 레지스터
+    reg [5:0]  c_SpdTimeCnt, n_SpdTimeCnt; // 먹이를 먹으면 일정 시간동안 속도가 빨라지는데, 그 일정시간을 저장할 레지스터
     reg        prev_isEat;
     reg [MAX_SIZE-1:0] Match;
 
@@ -52,10 +54,14 @@ module Snake_Game (
     wire isLstClk = c_ClkCnt >= LST_CLK;
     wire isEat = (n_Head_x == c_Item_x && n_Head_y == c_Item_y) && c_State == CHANGE;
     wire isGameOver = (n_Head_x == 0 || n_Head_y == 0 || n_Head_x == XSIZE - 1 || n_Head_y == YSIZE - 1) || |Match;
-    wire isSpdDw = c_SpdTimeCnt == 16;
+    wire isSpdDw = c_SpdTimeCnt == 32;
 
-    //사이즈값(2진수) -> FND로 변환하는거 추가해야함(스탑워치에서 했던거 써서 모듈로 따로 분리하면 될듯)
-
+    //assign o_LED[0] = i_Push[0];
+    //assign o_LED[1] = i_Push[1];
+    //assign o_LED[2] = i_Push[2];
+    //assign o_LED[3] = i_Push[3];
+    //assign o_LED[5:4] = c_Push;
+    assign o_LED = i_Select ? c_Item_x : c_Item_y;
     always @(posedge i_Clk or negedge i_Rst) begin
         if(!i_Rst) begin
             c_ClkCnt     = 0;
@@ -104,13 +110,13 @@ module Snake_Game (
     FND F0(SF_o_F0, o_Speed_FND0);
     FND F1(SF_o_F1, o_Speed_FND1);
     FND F2(CF_o_F0, o_Score_FND0);
-    FND F3(CF_o_F0, o_Score_FND1);
-    FND F4(CF_o_F0, o_Score_FND2);
-    FND F5(CF_o_F0, o_Score_FND3);
+    FND F3(CF_o_F1, o_Score_FND1);
+    FND F4(CF_o_F2, o_Score_FND2);
+    FND F5(CF_o_F3, o_Score_FND3);
 
     //VGA모듈 연결
     Vga V0(i_Clk, i_Rst, c_Body_x, c_Body_y, c_Item_x, c_Item_y, c_Size,
-           o_Hsync, o_Vsync, o_Red, o_Blue, o_Green);
+           o_Hsync, o_Vsync, o_Red, o_Green, o_Blue, sync, blank, clk);
 
     wire o_isMakeItem_Done;
     wire [5:0] GI_o_Item_x, GI_o_Item_y;
@@ -139,6 +145,8 @@ module Snake_Game (
 
         case(c_State)
             IDLE : begin
+                n_Body_x = XSIZE>>1;
+                n_Body_y = YSIZE>>1;
                 n_Head_x = XSIZE>>1;
                 n_Head_y = YSIZE>>1;
                 n_Item_x = 12;
@@ -200,17 +208,17 @@ module Snake_Game (
             STOP : begin
                 n_ClkCnt = isLstClk ? 0 : c_ClkCnt + DEF_SPD;
                 if(isLstClk) begin
-                    n_Body_x[119:114] = XSIZE-1;
-                    n_Body_y[119:114] = YSIZE-1;
+                    n_Body_x[5:0] = XSIZE-1;
+                    n_Body_y[5:0] = YSIZE-1;
                     j = 6;
                     for(i=0;i<(MAX_SIZE-1)*6;i=i+6) begin
-                        n_Body_x[i+:6] = c_Body_x[j+:6];
-                        n_Body_y[i+:6] = c_Body_y[j+:6];
+                        n_Body_x[j+:6] = c_Body_x[i+:6];
+                        n_Body_y[j+:6] = c_Body_y[i+:6];
                         j = j + 6;
                     end
                 end
 
-                if(c_Body_x[5:0] == XSIZE-1 && isLstClk) n_State = IDLE;
+                if(c_Body_x[119:114] == XSIZE-1 && isLstClk) n_State = IDLE;
             end
         endcase
     end
