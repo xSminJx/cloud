@@ -40,7 +40,6 @@ always@ (posedge i_Clk, negedge i_Rst)
         c_Item_y    = 0;
         r_Item_x    = 0;
         r_Item_y    = 0;
-        Match       = 0;
     end else begin
         c_State     = n_State;
         c_Item_x    = n_Item_x;
