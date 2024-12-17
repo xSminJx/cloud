@@ -17,21 +17,24 @@ wire               isMatch, o_isRanDone;
 reg     [ 2:0]     c_State, n_State;
 reg     [ 5:0]     c_Item_x, n_Item_x;
 reg     [ 5:0]     c_Item_y, n_Item_y;
-reg     [ 5:0]     r_Item_x, r_Item_y;
-reg                r_RandNeed;
 reg     [19:0]     Match;
 
-parameter   IDLE = 3'b000, GET = 3'b001, GETT = 3'b010, CHECK = 3'b011, DONE = 3'b100;
+parameter   IDLE    = 3'b000,
+            MAKERAN = 3'b001,
+            CHECK   = 3'b010,
+            CHECK2  = 3'b011,
+            DONE    = 3'b100;
 
 integer i;
 
-assign  o_Item_x = r_Item_x;
-assign  o_Item_y = r_Item_y;
+assign  o_Item_x = c_Item_x;
+assign  o_Item_y = c_Item_y;
 
 assign o_isMakeItem_Done = c_State == DONE;
 assign isMatch = |Match;
 
-LFSR LFSR0 (i_Clk, i_Rst, r_RandNeed, {buffer, random_x, random_y}, o_isRanDone);
+wire i_RandNeed = c_State == MAKERAN;
+LFSR LFSR0 (i_Clk, i_Rst, i_RandNeed, {buffer, random_x, random_y}, o_isRanDone);
 
 
 always@ (posedge i_Clk, negedge i_Rst)
@@ -39,46 +42,45 @@ always@ (posedge i_Clk, negedge i_Rst)
         c_State     = 0;
         c_Item_x    = 0;
         c_Item_y    = 0;
-        r_Item_x    = 0;
-        r_Item_y    = 0;
     end else begin
         c_State     = n_State;
         c_Item_x    = n_Item_x;
         c_Item_y    = n_Item_y;
-        r_Item_x    = n_State == CHECK ? c_Item_x : r_Item_x;
-        r_Item_y    = n_State == CHECK ? c_Item_y : r_Item_y;
     end
 
 
 always@ *
 begin
-    r_RandNeed  = i_ItemNeed;
     n_Item_x    = c_Item_x;
     n_Item_y    = c_Item_y;
     Match       = 0;
+    n_State = c_State;
 
     case(c_State)
         IDLE: begin
-            n_State = o_isRanDone ? GET : IDLE;
+            n_State = i_ItemNeed ? MAKERAN : IDLE;
         end
-        GET: begin
-            n_Item_x = (random_x < XSIZE) ? random_x : (random_x - XSIZE);
-            n_Item_y = (random_y < YSIZE) ? random_y : (random_y - YSIZE);
-            n_State = ((n_Item_x != c_Item_x) && (n_Item_y != c_Item_y)) ? CHECK : GETT;
-        end
-        GETT : begin
-            if(n_Item_x == 0) n_Item_x = n_Item_x+1;
-            if (n_Item_x == XSIZE-1) n_Item_x = n_Item_x-1;
-            if(n_Item_y == 0) n_Item_y = n_Item_y+1;
-            if (n_Item_y == YSIZE-1) n_Item_y = n_Item_y-1;
+        MAKERAN : begin
             n_State = CHECK;
         end
         CHECK: begin
+            if(o_isRanDone) begin
+                if(0<random_x&&random_x<XSIZE-1&&0<random_y&&random_x<YSIZE-1) begin
+                    n_Item_x = random_x;
+                    n_Item_y = random_y;
+                    n_State = CHECK2;
+                end
+                else begin
+                    n_State = MAKERAN;
+                end
+            end
+        end
+        CHECK2: begin
             for(i = 0; i < i_Body_size && i < MAX_SIZE; i = i + 1) begin
-                Match[i] = (c_Item_x == i_Body_x[i*6 +: 6] && c_Item_y == i_Body_y[i*6 +: 6]);
+                Match[i] = (n_Item_x == i_Body_x[i*6 +: 6] && n_Item_y == i_Body_y[i*6 +: 6]);
             end
             
-            n_State = isMatch ? GET : DONE;
+            n_State = isMatch ? MAKERAN : DONE;
         end
         DONE: begin
             n_State = IDLE;

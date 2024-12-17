@@ -20,7 +20,7 @@ assign o_isRanDone = c_State == DONE;
 always@ (posedge i_Clk, negedge i_Rst)
     if(!i_Rst) begin
         c_State = 0;
-        c_Num   = 14'b11001010101111; //14'b10101011000011;
+        c_Num   = 14'b11000010101111; //14'b10101011000011;
         r_Num   = 0;
     end else begin
         c_State = n_State;

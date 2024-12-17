@@ -62,6 +62,7 @@ module Snake_Game (
     //assign o_LED[3] = i_Push[3];
     //assign o_LED[5:4] = c_Push;
     assign o_LED = i_Select ? c_Item_x : c_Item_y;
+    
     always @(posedge i_Clk or negedge i_Rst) begin
         if(!i_Rst) begin
             c_ClkCnt     = 0;
@@ -145,12 +146,12 @@ module Snake_Game (
 
         case(c_State)
             IDLE : begin
-                n_Body_x = XSIZE>>1;
-                n_Body_y = YSIZE>>1;
-                n_Head_x = XSIZE>>1;
-                n_Head_y = YSIZE>>1;
-                n_Item_x = 12;
-                n_Item_y = 32;
+                n_Body_x = XSIZE >> 1;
+                n_Body_y = YSIZE >> 1;
+                n_Head_x = XSIZE >> 1;
+                n_Head_y = YSIZE >> 1;
+                n_Item_x = XSIZE >> 2;
+                n_Item_y = YSIZE >> 1;
                 n_Speed  = DEF_SPD;
                 n_Size   = DEF_SIZE;
                 if(!(&i_Push)) begin
@@ -195,7 +196,7 @@ module Snake_Game (
                 n_Body_x[5:0] = c_Head_x;
                 n_Body_y[5:0] = c_Head_y;
                 j = 6;
-                for(i=0;i<(MAX_SIZE-1)*6;i=i+6) begin
+                for(i=0;i<(MAX_SIZE-1)*6;i=i+6) begin // 반복문을 안 써도 된다는걸 깨달아버렸다...
                     n_Body_x[j+:6] = c_Body_x[i+:6];
                     n_Body_y[j+:6] = c_Body_y[i+:6];
                     j = j + 6;

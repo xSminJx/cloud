@@ -6,14 +6,14 @@ module Vga (
     i_item_x,
     i_item_y,
     i_size,
-    hsync,    
-    vsync,    
-    red,     
-    green,   
-    blue,    
-    sync,
-    blank,
-    clk
+    o_hsync,    
+    o_vsync,    
+    o_red,     
+    o_green,   
+    o_blue,    
+    o_sync,
+    o_blank,
+    o_clk
 );
     input i_Clk;
     input i_Rst;
@@ -27,15 +27,15 @@ module Vga (
 
     input [19:0] i_size;
 
-    output hsync;
-    output vsync;
+    output o_hsync;
+    output o_vsync;
 
-    output [7:0] red;
-    output [7:0] green;
-    output [7:0] blue;
-    output sync;
-    output blank;
-    output clk;
+    output [7:0] o_red;
+    output [7:0] o_green;
+    output [7:0] o_blue;
+    output o_sync;
+    output o_blank;
+    output o_clk;
 
     parameter [9:0] H_ACTIVE  =  10'd639 ;
     parameter [9:0] H_FRONT   =  10'd15 ;
@@ -65,12 +65,12 @@ module Vga (
     wire [9:0] item_y_scaled = i_item_y * PIXEL_SIZE;
 
 
-    reg              hysnc_reg;
-    reg              vsync_reg;
-    reg     [7:0]    red_reg;
-    reg     [7:0]   green_reg;
-    reg     [7:0]   blue_reg;
-    reg             line_done;
+    reg              n_hysnc;
+    reg              n_vsync;
+    reg     [7:0]    n_red;
+    reg     [7:0]    n_green;
+    reg     [7:0]    n_blue;
+    reg              line_done;
 
     reg     [9:0]   h_counter;
     reg     [9:0]   v_counter;
@@ -97,8 +97,6 @@ module Vga (
 
     integer j;
 
-
-
     always@(posedge clk_25m, negedge i_Rst) begin
         if (!i_Rst) begin
             h_counter = 10'd0;
@@ -111,45 +109,45 @@ module Vga (
             
             if (h_state == H_ACTIVE_STATE) begin
                 h_counter <= (h_counter==H_ACTIVE)?10'd_0:(h_counter + 10'd1) ;
-                hysnc_reg <= HIGH ;
+                n_hysnc <= HIGH ;
                 line_done <= LOW ;
                 h_state <= (h_counter == H_ACTIVE)?H_FRONT_STATE:H_ACTIVE_STATE ;
             end
             if (h_state == H_FRONT_STATE) begin
                 h_counter <= (h_counter==H_FRONT)?10'd_0:(h_counter + 10'd1) ;
-                hysnc_reg <= HIGH ;
+                n_hysnc <= HIGH ;
                 h_state <= (h_counter == H_FRONT)?H_PULSE_STATE:H_FRONT_STATE ;
             end
             if (h_state == H_PULSE_STATE) begin
                 h_counter <= (h_counter==H_PULSE)?10'd_0:(h_counter + 10'd1) ;
-                hysnc_reg <= LOW ;
+                n_hysnc <= LOW ;
                 h_state <= (h_counter == H_PULSE)?H_BACK_STATE:H_PULSE_STATE ;
             end
             if (h_state == H_BACK_STATE) begin
                 h_counter <= (h_counter==H_BACK)?10'd_0:(h_counter + 10'd1) ;
-                hysnc_reg <= HIGH ;
+                n_hysnc <= HIGH ;
                 h_state <= (h_counter == H_BACK)?H_ACTIVE_STATE:H_BACK_STATE ;
                 line_done <= (h_counter == (H_BACK-1))?HIGH:LOW ;
             end
 
             if (v_state == V_ACTIVE_STATE) begin
                 v_counter<=(line_done==HIGH)?((v_counter==V_ACTIVE)?10'd_0:(v_counter+10'd1)):v_counter ;
-                vsync_reg <= HIGH ;
+                n_vsync <= HIGH ;
                 v_state<=(line_done==HIGH)?((v_counter==V_ACTIVE)?V_FRONT_STATE:V_ACTIVE_STATE):V_ACTIVE_STATE ;
             end
             if (v_state == V_FRONT_STATE) begin
                 v_counter<=(line_done==HIGH)?((v_counter==V_FRONT)?10'd_0:(v_counter + 10'd1)):v_counter ;
-                vsync_reg <= HIGH;
+                n_vsync <= HIGH;
                 v_state<=(line_done==HIGH)?((v_counter==V_FRONT)?V_PULSE_STATE:V_FRONT_STATE):V_FRONT_STATE;
             end
             if (v_state == V_PULSE_STATE) begin
                 v_counter<=(line_done==HIGH)?((v_counter==V_PULSE)?10'd_0:(v_counter + 10'd1)):v_counter ;
-                vsync_reg <= LOW ;
+                n_vsync <= LOW ;
                 v_state<=(line_done==HIGH)?((v_counter==V_PULSE)?V_BACK_STATE:V_PULSE_STATE):V_PULSE_STATE;
             end
             if (v_state == V_BACK_STATE) begin
                 v_counter<=(line_done==HIGH)?((v_counter==V_BACK)?10'd_0:(v_counter + 10'd1)):v_counter ;
-                vsync_reg <= HIGH;
+                n_vsync <= HIGH;
                 v_state<=(line_done==HIGH)?((v_counter==V_BACK)?V_ACTIVE_STATE:V_BACK_STATE):V_BACK_STATE ;
             end
 
@@ -163,37 +161,37 @@ module Vga (
            
             if (h_state == H_ACTIVE_STATE && v_state == V_ACTIVE_STATE) begin
                 if (edge_active) begin
-                    red_reg   = 8'hFF;
-                    green_reg = 8'hFF;
-                    blue_reg  = 8'hFF;
+                    n_red   = 8'hFF;
+                    n_green = 8'hFF;
+                    n_blue  = 8'hFF;
                 end else if (item_active) begin
-                    red_reg   = 8'h00;
-                    green_reg = 8'hFF;
-                    blue_reg  = 8'h00;
+                    n_red   = 8'h00;
+                    n_green = 8'hFF;
+                    n_blue  = 8'h00;
                 end else if (worm_active) begin
-                    red_reg   = 8'hFF;
-                    green_reg = 8'h00;
-                    blue_reg  = 8'h00;
+                    n_red   = 8'hFF;
+                    n_green = 8'h00;
+                    n_blue  = 8'h00;
                 end else begin
-                    red_reg   = 8'h00;
-                    green_reg = 8'h00;
-                    blue_reg  = 8'h00;
+                    n_red   = 8'h00;
+                    n_green = 8'h00;
+                    n_blue  = 8'h00;
                 end
             end else begin
-                red_reg   = 8'hFF;
-                green_reg = 8'hFF;
-                blue_reg  = 8'hFF;
+                n_red   = 8'hFF;
+                n_green = 8'hFF;
+                n_blue  = 8'hFF;
             end
 
           end
       end
-    assign hsync = hysnc_reg ;
-    assign vsync = vsync_reg ;
-    assign red = red_reg ;
-    assign green = green_reg ;
-    assign blue = blue_reg ;
-    assign clk = clk_25m ;
-    assign sync = 1'b_0 ;
-    assign blank = hysnc_reg & vsync_reg ;
+    assign o_hsync = n_hysnc ;
+    assign o_vsync = n_vsync ;
+    assign o_red   = n_red ;
+    assign o_green = n_green ;
+    assign o_blue  = n_blue ;
+    assign o_clk   = clk_25m ;
+    assign o_sync  = 1'b0 ;
+    assign o_blank = n_hysnc & n_vsync ;
 
 endmodule
