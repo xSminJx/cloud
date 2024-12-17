@@ -1,5 +1,12 @@
 `timescale 1 ns / 1 ns
-
+`include "Snake_Game.v"
+`include "SetHead.v"
+`include "Vga.v"
+`include "Generate_Item_Pos.v"
+`include "LFSR.v"
+`include "ScoreFND.v"
+`include "SpeedFND.v"
+`include "FND.v"
 module	tb_SetHead();
 
 reg	Clk;
@@ -12,6 +19,11 @@ always
 
 Snake_Game G0(Clk, Rst, i_Pause, i_Push,
               , , , , , , , , , ,);
+
+initial begin
+	$dumpfile("test_out.vcd");
+	$dumpvars;
+end
 
 initial
 begin
@@ -26,10 +38,14 @@ begin
     #100000 i_Pause = 1;
     #10000 i_Pause = 0;
 
-    #50000 i_Push = 4'b1101; #300000;
+    #50000 i_Push = 4'b1101;
+    #50000 i_Push = 4'b1011;
+    #50000 i_Push = 4'b0111;
 
 	$stop;
+	$finish;
 end
+
 
 endmodule
 

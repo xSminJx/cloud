@@ -1,15 +1,18 @@
 `timescale 1 ns / 1 ns
-//`include "snake_game.v"
+`include "snake_game.v"
 `include "SetHead.v"
-
-module	tb_UART_Top();
+`include "SpeedFND.v"
+`include "ScoreFND.v"
+`include "FND.v"
+`include "Vga.v"
+module	tb_SetHead();
 
 reg	Clk;
 reg	Rst;
 
 reg [1:0] i_Way;
 reg [3:0] i_Push;
-reg [6:0] i_Head_x, i_Head_y;
+reg [5:0] i_Head_x, i_Head_y;
 
 always
 	#10 Clk = ~Clk;
